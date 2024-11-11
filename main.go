@@ -4,7 +4,9 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -17,6 +19,20 @@ import (
 )
 
 func main() {
+	// Define command-line flags
+	queryFile := flag.String("query-file", "", "Path to the JSON file containing the Elasticsearch query")
+	flag.Parse()
+
+	if *queryFile == "" {
+		log.Fatal("Please provide the path to the query file using the -query-file flag.")
+	}
+
+	// Read the query from the specified file
+	query, err := ioutil.ReadFile(*queryFile)
+	if err != nil {
+		log.Fatalf("Error reading query file: %s", err)
+	}
+
 	// Configure TLS settings to skip certificate verification (use with caution)
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: true,
@@ -46,14 +62,7 @@ func main() {
 	defer file.Close()
 
 	// Define the batch size
-	batchSize := 10
-
-	// Define the initial search query
-	query := `{
-        "query": {
-            "match_all": {}
-        }
-    }`
+	batchSize := 6
 
 	// Define exponential backoff parameters
 	backoffConfig := backoff.NewExponentialBackOff()
@@ -68,7 +77,7 @@ func main() {
 		res, err = es.Search(
 			es.Search.WithContext(context.Background()),
 			es.Search.WithIndex("sample_data"), // Replace with your index name
-			es.Search.WithBody(strings.NewReader(query)),
+			es.Search.WithBody(strings.NewReader(string(query))),
 			es.Search.WithSize(batchSize),
 			es.Search.WithScroll(time.Minute), // Scroll duration
 			es.Search.WithTrackTotalHits(true),
@@ -114,6 +123,7 @@ func main() {
 	// Loop to retrieve the remaining batches
 	for {
 		currentPage++
+		log.Printf("Processing page %d of %d", currentPage, totalPages)
 
 		// Function to execute the scroll request
 		err = backoff.Retry(func() error {
