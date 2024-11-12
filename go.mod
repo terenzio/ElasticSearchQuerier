@@ -1,6 +1,6 @@
 module github.com/terenzio/ElasticSearchQuerier
 
-go 1.22.1
+go 1.21
 
 require (
 	github.com/cenkalti/backoff/v4 v4.3.0

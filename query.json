@@ -1,5 +1,8 @@
 {
     "query": {
-        "match_all": {}
+      "match": {
+        "title": "Document 2"
+      }
     }
-}
+  }
+  

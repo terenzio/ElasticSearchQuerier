@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -19,20 +18,14 @@ import (
 )
 
 func main() {
-	// Define command-line flags
-	queryFile := flag.String("query-file", "", "Path to the JSON file containing the Elasticsearch query")
-	flag.Parse()
 
-	if *queryFile == "" {
-		log.Fatal("Please provide the path to the query file using the -query-file flag.")
+	// Read Elasticsearch URL from environment variable
+	esURL := os.Getenv("ELASTICSEARCH_URL")
+	if esURL == "" {
+		esURL = "http://localhost:9200"
 	}
 
-	// Read the query from the specified file
-	query, err := ioutil.ReadFile(*queryFile)
-	if err != nil {
-		log.Fatalf("Error reading query file: %s", err)
-	}
-
+	fmt.Printf("[DEBUG!!!] esURL: %s\n\n", esURL)
 	// Configure TLS settings to skip certificate verification (use with caution)
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: true,
@@ -43,16 +36,56 @@ func main() {
 		TLSClientConfig: tlsConfig,
 	}
 
-	// Initialize the Elasticsearch client with the custom transport
-	es, err := elasticsearch.NewClient(elasticsearch.Config{
-		Addresses: []string{
-			"http://localhost:9200", // Replace with your Elasticsearch host
-		},
+	// Configure the Elasticsearch client
+	cfg := elasticsearch.Config{
+		Addresses: []string{esURL},
 		Transport: transport,
-	})
-	if err != nil {
-		log.Fatalf("Error creating the Elasticsearch client: %s", err)
 	}
+	es, err := elasticsearch.NewClient(cfg)
+	if err != nil {
+		log.Fatalf("Error creating the client: %s", err)
+	}
+
+	// // Define command-line flags
+	// queryFile := flag.String("query-file", "", "Path to the JSON file containing the Elasticsearch query")
+	// flag.Parse()
+
+	// if *queryFile == "" {
+	// 	log.Fatal("Please provide the path to the query file using the -query-file flag.")
+	// }
+
+	// // Read the query from the specified file
+	// query, err := ioutil.ReadFile(*queryFile)
+	// if err != nil {
+	// 	log.Fatalf("Error reading query file: %s", err)
+	// }
+
+	// Read the query from query.json
+	queryFile, err := os.Open("query.json")
+	if err != nil {
+		log.Fatalf("Error opening query.json: %s", err)
+	}
+	defer queryFile.Close()
+
+	query, err := ioutil.ReadAll(queryFile)
+	if err != nil {
+		log.Fatalf("Error reading query.json: %s", err)
+	}
+
+	fmt.Printf("[DEBUG!!!] query 1: %s\n\n", query)
+	fmt.Printf("[DEBUG!!!] query 2: %v\n\n", string(query))
+	fmt.Printf("[DEBUG!!!] query 3: %v\n\n", strings.NewReader(string(query)))
+
+	// Initialize the Elasticsearch client with the custom transport
+	// es, err := elasticsearch.NewClient(elasticsearch.Config{
+	// 	Addresses: []string{
+	// 		"http://localhost:9200", // Replace with your Elasticsearch host
+	// 	},
+	// 	Transport: transport,
+	// })
+	// if err != nil {
+	// 	log.Fatalf("Error creating the Elasticsearch client: %s", err)
+	// }
 
 	// Open the output file
 	file, err := os.Create("logs.txt")
