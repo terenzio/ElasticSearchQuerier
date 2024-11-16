@@ -1,26 +1,17 @@
 version: '3.8'
 
 services:
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
-    container_name: elasticsearch
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-    ports:
-      - '9200:9200'
-    networks:
-      - esnet
-
   go-app:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: go-app
     environment:
-      - ELASTICSEARCH_URL=http://elasticsearch:9200
-    depends_on:
-      - elasticsearch
+      - ELASTICSEARCH_URL=http://host.docker.internal:9200
+    # depends_on:
+    #   - elasticsearch
+    volumes:
+      - ./data:/app/data
     networks:
       - esnet
 

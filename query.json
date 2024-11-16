@@ -1,8 +1,8 @@
 {
+    "size": 1000,
     "query": {
-      "match": {
-        "title": "Document 2"
-      }
+        "match_phrase": {
+            "title": "{{title}}"
+        }
     }
-  }
-  
+}
